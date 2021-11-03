@@ -1,14 +1,15 @@
 {
-  "name": "@vonage/cli-plugin-vapp",
+  "name": "@vonage/cli-plugin-scaffold",
   "version": "0.0.0",
   "author": "AVonage Dev Rel <devrel@vonage.com>",
-  "homepage": "https://github.com/vonage/cli-plugin-vapp",
+  "homepage": "https://github.com/vonage/cli-plugin-scaffold",
   "license": "MIT",
-  "bugs": "https://github.com/vonage/cli-plugin-vapp/issues",
+  "bugs": "https://github.com/vonage/cli-plugin-scaffold/issues",
   "dependencies": {
     "@oclif/command": "^1.8.0",
     "@oclif/config": "^1.17.0",
     "@vonage/cli-utils": "^1.0.0",
+    "shelljs": "^0.8.4",
     "tslib": "^1.14.1"
   },
   "engines": {
@@ -22,7 +23,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Vonage/cli-plugin-vapp.git"
+    "url": "git+https://github.com/Vonage/cli-plugin-scaffold.git"
   },
   "keywords": [
     "oclif-plugin"
@@ -31,8 +32,8 @@
     "commands": "./lib/commands",
     "bin": "oclif-example",
     "topics": {
-      "vapp": {
-          "hidden": true
+      "scaffold": {
+        "hidden": true
       }
     },
     "devPlugins": [
