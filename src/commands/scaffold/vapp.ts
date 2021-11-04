@@ -23,7 +23,7 @@ export default class ScaffoldVapp extends ScaffoldCommand {
 
     async run() {
         const flags = this.parsedFlags as OutputFlags<typeof ScaffoldCommand.flags> & CreateFlags;
-        this.cloneClients(flags.platforms);
+        this.cloneVappClients(flags.platforms);
         this.exit();
     }
 

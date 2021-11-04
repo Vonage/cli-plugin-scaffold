@@ -16,20 +16,21 @@ export default abstract class ScaffoldCommand extends BaseCommand {
         this.error(error);
     }
 
-    cloneClients(clients: [string]): any {
+    cloneVappClients(clients: [string]): any {
         if (!shell.which('git', { silent: true })) {
-            shell.echo('Git required');
+            this.log('Git required');
             shell.exit(1);
             return;
         }
 
-        if (!shell.mkdir('vapp')) {
-            shell.echo('Folder vapp, already exists');
+        if (shell.mkdir('vapp').code !== 0) {
+            this.log('Folder vapp, already exists');
             shell.exit(1);
             return;
         }
-        
-        shell.cd('vapp');
+
+        shell.cd('vapp'); // entering the vapp folder
+        this.log('Downloading the clients');
         shell.exec('git clone https://github.com/nexmo-community/clientsdk-the-v-app.git . --no-checkout --depth 1', { silent: true });
         
         shell.exec('git sparse-checkout init --cone');
@@ -47,9 +48,34 @@ export default abstract class ScaffoldCommand extends BaseCommand {
             this.log('Cloning the Web client');
             shell.exec('git sparse-checkout add client-web');
         }
-
         shell.exec('git checkout main; rm -rf .git .gitignore', { silent: true })
-        this.log(`The ${clients} clients are in the vapp folder`);
+        shell.cd('..'); // leaving the vapp folder
+
+        this.log('Installing the dependencies');
+
+        if (clients.includes('ios')) {
+            shell.cd('vapp/client-ios');
+            if (!shell.which('pod', { silent: true })) {
+                this.log('Cocoapods required');
+                shell.exit(1);
+                return;
+            }
+            shell.exec('pod install', { silent: true });
+            shell.cd('../');
+        }
+
+        if (clients.includes('web')) {
+            shell.cd('vapp/client-web');
+            if (!shell.which('npm', { silent: true })) {
+                this.log('NPM required');
+                shell.exit(1);
+                return;
+            }
+            shell.exec('npm install', { silent: true });
+            shell.cd('../');
+        }
+
+        this.log(`The client(s) are in the vapp folder`);
         shell.exit();
     }
 }
