@@ -1,6 +1,8 @@
 import BaseCommand from '@vonage/cli-utils';
 import { OutputFlags } from '@oclif/parser';
-var shell = require('shelljs');
+import { writeFileSync, readFileSync } from 'fs';
+const shell = require('shelljs');
+const path = require('path');
 
 export default abstract class ScaffoldCommand extends BaseCommand {
 
@@ -16,7 +18,95 @@ export default abstract class ScaffoldCommand extends BaseCommand {
         this.error(error);
     }
 
-    cloneVappClients(clients: [string]): any {
+    createVonageAppKey(output: any): any {
+        // write vonage.app file
+        let vonage_app_file_path = `${process.cwd()}/vonage_app.json`;
+        let vonage_private_key_file_path = `${process.cwd()}/vapp_private.key`;
+
+        writeFileSync(vonage_app_file_path, JSON.stringify({
+            application_name: output.name,
+            application_id: output.id,
+            private_key: output.keys.private_key
+        }, null, 2))
+
+        writeFileSync(vonage_private_key_file_path, output.keys.private_key)
+    }
+
+    createApplication(data: object): any {
+        return new Promise((res, rej) => {
+            this.vonage.applications.create(data, (error: any, response: any) => {
+                if (error) {
+                    rej(error)
+                } else {
+                    res(response)
+                }
+            })
+        })
+    }
+
+    updateVonageApplication(id: any, data: any): any {
+        return new Promise((res, rej) => {
+            this.vonage.applications.update(id, data, (error: any, result: any) => {
+                if (error) {
+                    rej(error);
+                }
+                else {
+                    res(result);
+                }
+            });
+        })
+    }
+
+    updateClientURL(clients: [string], url: string): any {
+        shell.cd('vapp', { silent: true });
+        if (clients.includes('ios')) {
+            const baseUrlFilePath = `${process.cwd()}/client-ios/TheApp/Helpers/RemoteLoader.swift`
+            let baseUrlFileRaw = readFileSync(baseUrlFilePath, 'utf8');
+            baseUrlFileRaw = baseUrlFileRaw.replace('""', `"${url}"`);
+            writeFileSync(baseUrlFilePath, baseUrlFileRaw, 'utf8');
+        }
+    }
+
+    prepVappBackend(deployLocation: string): any {
+        shell.cd('vapp', { silent: true });
+        shell.cd('backend-node', { silent: true });
+        let app_details_raw = readFileSync(path.join(process.cwd(), '/../vonage_app.json'));
+        let app_details = (JSON.parse(app_details_raw.toString()));
+        
+        if (deployLocation === 'local') {
+            if (!shell.which('postgres', { silent: true })) {
+                this.log('Postgres required');
+                shell.exit(1);
+                return;
+            }
+
+            // shell.exec('psql postgres -c "CREATE DATABASE vapp WITH ENCODING \'UTF8\' TEMPLATE template0"');
+            // shell.exec('psql vapp -f scripts/init.sql')
+
+            shell.exec('cp .env-sample .env')
+
+            let pk = app_details.private_key.replace(/\n/g, '\\n');
+            pk = '"'+ pk + '"'
+            
+            let envFileRaw = readFileSync(`${process.cwd()}/.env`, 'utf8');
+            envFileRaw = envFileRaw.replace(/postgresDatabaseUrl=/g, 'postgresDatabaseUrl=postgres://@localhost:5432/vapp');
+            envFileRaw = envFileRaw.replace(/vonageAppId=/g, `vonageAppId=${app_details.application_id}`);
+            envFileRaw = envFileRaw.replace(/vonageAppPrivateKey=/g, `vonageAppPrivateKey=${pk}`);
+            writeFileSync(`${process.cwd()}/.env`, envFileRaw, 'utf8');
+            shell.cd('../');
+            return app_details.application_id;
+        }
+    }
+
+    startLocalVappBackend(appId: String): any {
+        shell.cd('vapp', { silent: true });
+        shell.cd('backend-node', { silent: true });
+
+        shell.exec('npm start', ({ async: true }))
+        shell.exec(`npx localtunnel -p=3000 --subdomain=${appId}`)
+    }
+
+    cloneVappClients(clients: [string], deployLocation: string): any {
         if (!shell.which('git', { silent: true })) {
             this.log('Git required');
             shell.exit(1);
@@ -29,8 +119,8 @@ export default abstract class ScaffoldCommand extends BaseCommand {
             return;
         }
 
-        shell.cd('vapp'); // entering the vapp folder
-        this.log('Downloading the clients');
+        shell.cd('vapp');
+        this.log('Downloading Vapp');
         shell.exec('git clone https://github.com/nexmo-community/clientsdk-the-v-app.git . --no-checkout --depth 1', { silent: true });
         
         shell.exec('git sparse-checkout init --cone');
@@ -48,13 +138,17 @@ export default abstract class ScaffoldCommand extends BaseCommand {
             this.log('Cloning the Web client');
             shell.exec('git sparse-checkout add client-web');
         }
-        shell.exec('git checkout main; rm -rf .git .gitignore', { silent: true })
-        shell.cd('..'); // leaving the vapp folder
 
+        if (deployLocation !== 'skip') {
+            this.log('Cloning the backend server');
+            shell.exec('git sparse-checkout add backend-node');
+        }
+
+        shell.exec('git checkout main; rm -rf .git .gitignore', { silent: true })
         this.log('Installing the dependencies');
 
         if (clients.includes('ios')) {
-            shell.cd('vapp/client-ios');
+            shell.cd('client-ios');
             if (!shell.which('pod', { silent: true })) {
                 this.log('Cocoapods required');
                 shell.exit(1);
@@ -65,7 +159,7 @@ export default abstract class ScaffoldCommand extends BaseCommand {
         }
 
         if (clients.includes('web')) {
-            shell.cd('vapp/client-web');
+            shell.cd('client-web');
             if (!shell.which('npm', { silent: true })) {
                 this.log('NPM required');
                 shell.exit(1);
@@ -75,7 +169,12 @@ export default abstract class ScaffoldCommand extends BaseCommand {
             shell.cd('../');
         }
 
+        if (deployLocation === 'local') {
+            shell.cd('backend-node');
+            shell.exec('npm install', { silent: true });
+            shell.cd('../');
+        }
+
         this.log(`The client(s) are in the vapp folder`);
-        shell.exit();
     }
 }

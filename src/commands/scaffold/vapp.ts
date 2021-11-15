@@ -4,6 +4,7 @@ import { OutputFlags, OutputArgs } from '@oclif/parser';
 
 interface CreateFlags {
     platforms: any
+    backend: any
 }
 
 export default class ScaffoldVapp extends ScaffoldCommand {
@@ -16,6 +17,11 @@ export default class ScaffoldVapp extends ScaffoldCommand {
         'platforms': flags.string({
             description: 'Which client platforms to bootstrap',
             required: true
+        }),
+        'backend': flags.string({
+            description: 'Where should the backend be deployed',
+            options: ['local', 'heroku', 'skip'],
+            required: true
         })
       }
     
@@ -23,7 +29,24 @@ export default class ScaffoldVapp extends ScaffoldCommand {
 
     async run() {
         const flags = this.parsedFlags as OutputFlags<typeof ScaffoldCommand.flags> & CreateFlags;
-        this.cloneVappClients(flags.platforms);
+        const response: any = { 
+            name: 'vapp',
+            capabilities: { rtc: { webhooks: { event_url: { address: 'https://www.sample.com' } } } },
+            privacy: { improve_ai: false }
+        };
+        
+        this.cloneVappClients(flags.platforms, flags.backend);
+        const output = await this.createApplication(response)
+        this.createVonageAppKey(output);
+        const appId = this.prepVappBackend(flags.backend);
+        const rtcURL = `https://www.${appId}.loca.lt/rtc/events`;
+        let updateResponse: any = { 
+            name: 'vapp',
+            capabilities: { rtc: { webhooks: { event_url: { address: rtcURL } } } },
+        };
+        await this.updateVonageApplication(appId, updateResponse);
+        this.updateClientURL(flags.platforms, rtcURL);
+        this.startLocalVappBackend(appId);
         this.exit();
     }
 
