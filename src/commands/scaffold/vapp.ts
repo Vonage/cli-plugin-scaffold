@@ -50,7 +50,7 @@ export default class ScaffoldVapp extends ScaffoldCommand {
         };
         await this.updateVonageApplication(appId, updateResponse);
 
-        this.updateClientURL(flags.platforms, rtcURL);
+        this.updateClientURL(flags.platforms, appId);
         this.startLocalVappBackend(appId);
 
         this.exit();
