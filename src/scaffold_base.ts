@@ -113,8 +113,8 @@ export default abstract class ScaffoldCommand extends BaseCommand {
             shell.cd('backend-node', { silent: true });
         }
 
-        shell.exec('npm start', ({ async: false }))
-        // shell.exec(`npx localtunnel -p=3000 --subdomain=${appId}`)
+        shell.exec('npm start', ({ async: true }))
+        shell.exec(`npx localtunnel -p=3000 --subdomain=${appId}`)
     }
 
     checkPath(folder: string): boolean {
