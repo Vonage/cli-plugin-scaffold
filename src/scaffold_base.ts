@@ -64,14 +64,14 @@ export default abstract class ScaffoldCommand extends BaseCommand {
         if (clients.includes('ios')) {
             const baseUrlFilePath = `${process.cwd()}/vapp/client-ios/TheApp/Helpers/RemoteLoader.swift`
             let baseUrlFileRaw = readFileSync(baseUrlFilePath, 'utf8');
-            baseUrlFileRaw = baseUrlFileRaw.replace('VAPP_BASE_URL', `http://localhost:3000`);
+            baseUrlFileRaw = baseUrlFileRaw.replace('VAPP_BASE_URL', 'http://localhost:3000');
             writeFileSync(baseUrlFilePath, baseUrlFileRaw, 'utf8');
         }
 
         if (clients.includes('android')) {
             const baseUrlFilePath = `${process.cwd()}/vapp/client-android/app/src/main/java/com/vonage/vapp/data/ApiRepository.kt`
             let baseUrlFileRaw = readFileSync(baseUrlFilePath, 'utf8');
-            baseUrlFileRaw = baseUrlFileRaw.replace('VAPP_BASE_URL', `http://localhost:3000`);
+            baseUrlFileRaw = baseUrlFileRaw.replace('VAPP_BASE_URL', `${url}`);
             writeFileSync(baseUrlFilePath, baseUrlFileRaw, 'utf8');
         }
     }
