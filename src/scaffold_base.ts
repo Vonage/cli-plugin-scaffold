@@ -58,30 +58,37 @@ export default abstract class ScaffoldCommand extends BaseCommand {
     }
 
     updateClientURL(clients: [string], url: string): any {
-        shell.cd('vapp', { silent: true });
+        if (this.checkPath('vapp')) {
+            shell.cd('../', { silent: true });
+        }
         if (clients.includes('ios')) {
-            const baseUrlFilePath = `${process.cwd()}/client-ios/TheApp/Helpers/RemoteLoader.swift`
+            const baseUrlFilePath = `${process.cwd()}/vapp/client-ios/TheApp/Helpers/RemoteLoader.swift`
             let baseUrlFileRaw = readFileSync(baseUrlFilePath, 'utf8');
-            baseUrlFileRaw = baseUrlFileRaw.replace('""', `"${url}"`);
+            baseUrlFileRaw = baseUrlFileRaw.replace('VAPP_BASE_URL', `${url}`);
+            writeFileSync(baseUrlFilePath, baseUrlFileRaw, 'utf8');
+        }
+
+        if (clients.includes('android')) {
+            const baseUrlFilePath = `${process.cwd()}/vapp/client-android/app/src/main/java/com/vonage/vapp/data/ApiRepository.kt`
+            let baseUrlFileRaw = readFileSync(baseUrlFilePath, 'utf8');
+            baseUrlFileRaw = baseUrlFileRaw.replace('VAPP_BASE_URL', `${url}`);
             writeFileSync(baseUrlFilePath, baseUrlFileRaw, 'utf8');
         }
     }
 
     prepVappBackend(deployLocation: string): any {
-        shell.cd('vapp', { silent: true });
-        shell.cd('backend-node', { silent: true });
+        if (!this.checkPath('vapp')) {
+            shell.cd('vapp', { silent: true });
+        }
+        if (!this.checkPath('backend-node')) {
+            shell.cd('backend-node', { silent: true });
+        }
         let app_details_raw = readFileSync(path.join(process.cwd(), '/../vonage_app.json'));
         let app_details = (JSON.parse(app_details_raw.toString()));
         
         if (deployLocation === 'local') {
-            if (!shell.which('postgres', { silent: true })) {
-                this.log('Postgres required');
-                shell.exit(1);
-                return;
-            }
-
-            // shell.exec('psql postgres -c "CREATE DATABASE vapp WITH ENCODING \'UTF8\' TEMPLATE template0"');
-            // shell.exec('psql vapp -f scripts/init.sql')
+            shell.exec('psql postgres -c "CREATE DATABASE vapp WITH ENCODING \'UTF8\' TEMPLATE template0"');
+            shell.exec('psql vapp -f scripts/init.sql')
 
             shell.exec('cp .env-sample .env')
 
@@ -99,20 +106,55 @@ export default abstract class ScaffoldCommand extends BaseCommand {
     }
 
     startLocalVappBackend(appId: String): any {
-        shell.cd('vapp', { silent: true });
-        shell.cd('backend-node', { silent: true });
+        if (!this.checkPath('vapp')) {
+            shell.cd('vapp', { silent: true });
+        }
+        if (!this.checkPath('backend-node')) {
+            shell.cd('backend-node', { silent: true });
+        }
 
         shell.exec('npm start', ({ async: true }))
         shell.exec(`npx localtunnel -p=3000 --subdomain=${appId}`)
     }
 
-    cloneVappClients(clients: [string], deployLocation: string): any {
+    checkPath(folder: string): boolean {
+        const pwd = shell.pwd()
+        return pwd.includes(folder)
+    }
+
+    checkDependencies(clients: [string], deployLocation: string): any {
         if (!shell.which('git', { silent: true })) {
             this.log('Git required');
             shell.exit(1);
             return;
         }
 
+        if (clients.includes('ios')) {
+            if (!shell.which('pod', { silent: true })) {
+                this.log('Cocoapods required');
+                shell.exit(1);
+                return;
+            }
+        }
+
+        if (clients.includes('web')) {
+            if (!shell.which('npm', { silent: true })) {
+                this.log('NPM required');
+                shell.exit(1);
+                return;
+            }
+        }
+
+        if (deployLocation === 'local') {
+            if (!shell.which('postgres', { silent: true })) {
+                this.log('Postgres required');
+                shell.exit(1);
+                return;
+            }
+        }
+    }
+
+    cloneVappClients(clients: [string], deployLocation: string): any {
         if (shell.mkdir('vapp').code !== 0) {
             this.log('Folder vapp, already exists');
             shell.exit(1);
@@ -149,22 +191,12 @@ export default abstract class ScaffoldCommand extends BaseCommand {
 
         if (clients.includes('ios')) {
             shell.cd('client-ios');
-            if (!shell.which('pod', { silent: true })) {
-                this.log('Cocoapods required');
-                shell.exit(1);
-                return;
-            }
             shell.exec('pod install', { silent: true });
             shell.cd('../');
         }
 
         if (clients.includes('web')) {
             shell.cd('client-web');
-            if (!shell.which('npm', { silent: true })) {
-                this.log('NPM required');
-                shell.exit(1);
-                return;
-            }
             shell.exec('npm install', { silent: true });
             shell.cd('../');
         }
