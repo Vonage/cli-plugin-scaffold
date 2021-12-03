@@ -29,29 +29,21 @@ export default class ScaffoldVapp extends ScaffoldCommand {
 
     async run() {
         const flags = this.parsedFlags as OutputFlags<typeof ScaffoldCommand.flags> & CreateFlags;
-        const response: any = { 
-            name: 'vapp',
-            capabilities: { rtc: { webhooks: { event_url: { address: 'https://www.sample.com' } } } },
-            privacy: { improve_ai: false }
-        };
         
         this.checkDependencies(flags.platforms, flags.backend);
         this.cloneVappClients(flags.platforms, flags.backend);
 
-        const output = await this.createApplication(response)
-        this.createVonageAppKey(output);
+        if (flags.backend !== 'skip') {
+            const output = await this.createApplication()
+            this.createVonageAppKey(output);
 
-        const appId = this.prepVappBackend(flags.backend);
-        const rtcURL = `https://www.${appId}.loca.lt/rtc/events`;
+            const appId = this.prepVappBackend(flags.backend);
 
-        const updateResponse: any = { 
-            name: 'vapp',
-            capabilities: { rtc: { webhooks: { event_url: { address: rtcURL } } } },
-        };
-        await this.updateVonageApplication(appId, updateResponse);
+            await this.updateVonageApplication(appId);
 
-        this.updateClientURL(flags.platforms, appId);
-        this.startLocalVappBackend(appId);
+            this.updateClientURL(flags.platforms, appId);
+            this.startLocalVappBackend(appId);
+        }
 
         this.exit();
     }

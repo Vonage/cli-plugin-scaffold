@@ -32,7 +32,13 @@ export default abstract class ScaffoldCommand extends BaseCommand {
         writeFileSync(vonage_private_key_file_path, output.keys.private_key)
     }
 
-    createApplication(data: object): any {
+    createApplication(): any {
+        const data: any = { 
+            name: 'vapp',
+            capabilities: { rtc: { webhooks: { event_url: { address: 'https://www.sample.com' } } } },
+            privacy: { improve_ai: false }
+        };
+
         return new Promise((res, rej) => {
             this.vonage.applications.create(data, (error: any, response: any) => {
                 if (error) {
@@ -44,7 +50,14 @@ export default abstract class ScaffoldCommand extends BaseCommand {
         })
     }
 
-    updateVonageApplication(id: any, data: any): any {
+    updateVonageApplication(id: any): any {
+        const rtcURL = `https://www.${id}.loca.lt/rtc/events`;
+
+        const data: any = { 
+            name: 'vapp',
+            capabilities: { rtc: { webhooks: { event_url: { address: rtcURL } } } },
+        };
+
         return new Promise((res, rej) => {
             this.vonage.applications.update(id, data, (error: any, result: any) => {
                 if (error) {
