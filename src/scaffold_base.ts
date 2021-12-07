@@ -98,27 +98,32 @@ export default abstract class ScaffoldCommand extends BaseCommand {
         }
         let app_details_raw = readFileSync(path.join(process.cwd(), '/../vonage_app.json'));
         let app_details = (JSON.parse(app_details_raw.toString()));
+
+        shell.exec('cp .env-sample .env')
+
+        let pk = app_details.private_key.replace(/\n/g, '\\n');
+        pk = '"'+ pk + '"'
+        let envFileRaw = readFileSync(`${process.cwd()}/.env`, 'utf8');
+        envFileRaw = envFileRaw.replace(/vonageAppId=/g, `vonageAppId=${app_details.application_id}`);
+        envFileRaw = envFileRaw.replace(/vonageAppPrivateKey=/g, `vonageAppPrivateKey=${pk}`);
+        envFileRaw = envFileRaw.replace(/USE_LOCALTUNNEL=/g, `USE_LOCALTUNNEL=1`);
         
         if (deployLocation === 'local') {
             shell.exec('psql postgres -c "CREATE DATABASE vapp WITH ENCODING \'UTF8\' TEMPLATE template0"');
             shell.exec('psql vapp -f scripts/init.sql')
-
-            shell.exec('cp .env-sample .env')
-
-            let pk = app_details.private_key.replace(/\n/g, '\\n');
-            pk = '"'+ pk + '"'
-            
-            let envFileRaw = readFileSync(`${process.cwd()}/.env`, 'utf8');
             envFileRaw = envFileRaw.replace(/postgresDatabaseUrl=/g, 'postgresDatabaseUrl=postgres://@localhost:5432/vapp');
-            envFileRaw = envFileRaw.replace(/vonageAppId=/g, `vonageAppId=${app_details.application_id}`);
-            envFileRaw = envFileRaw.replace(/vonageAppPrivateKey=/g, `vonageAppPrivateKey=${pk}`);
-            writeFileSync(`${process.cwd()}/.env`, envFileRaw, 'utf8');
-            shell.cd('../');
-            return app_details.application_id;
         }
+
+        if (deployLocation === 'docker') {
+            envFileRaw = envFileRaw.replace(/postgresDatabaseUrl=/g, 'postgresDatabaseUrl=postgres://postgres:postgres@postgres:5432/vapp-docker');
+        }
+
+        writeFileSync(`${process.cwd()}/.env`, envFileRaw, 'utf8');
+        shell.cd('../');
+        return app_details.application_id;
     }
 
-    startLocalVappBackend(appId: String): any {
+    startVappBackend(deployLocation: string): any {
         if (!this.checkPath('vapp')) {
             shell.cd('vapp', { silent: true });
         }
@@ -126,8 +131,13 @@ export default abstract class ScaffoldCommand extends BaseCommand {
             shell.cd('backend-node', { silent: true });
         }
 
-        shell.exec('npm start', ({ async: true }))
-        shell.exec(`npx localtunnel -p=3000 --subdomain=${appId}`)
+        if (deployLocation === 'local') {
+            shell.exec('npm start')
+        }
+
+        if (deployLocation === 'docker') {
+            shell.exec('docker compose up')
+        } 
     }
 
     checkPath(folder: string): boolean {
@@ -161,6 +171,14 @@ export default abstract class ScaffoldCommand extends BaseCommand {
         if (deployLocation === 'local') {
             if (!shell.which('postgres', { silent: true })) {
                 this.log('Postgres required');
+                shell.exit(1);
+                return;
+            }
+        }
+
+        if (deployLocation === 'docker') {
+            if (!shell.which('docker', { silent: true })) {
+                this.log('Docker required');
                 shell.exit(1);
                 return;
             }
@@ -214,7 +232,7 @@ export default abstract class ScaffoldCommand extends BaseCommand {
             shell.cd('../');
         }
 
-        if (deployLocation === 'local') {
+        if (deployLocation !== 'skip') {
             shell.cd('backend-node');
             shell.exec('npm install', { silent: true });
             shell.cd('../');

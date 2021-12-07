@@ -15,12 +15,12 @@ export default class ScaffoldVapp extends ScaffoldCommand {
     static flags: OutputFlags<typeof ScaffoldCommand.flags> & CreateFlags = {
         ...ScaffoldCommand.flags,
         'platforms': flags.string({
-            description: 'Which client platforms to bootstrap',
+            description: 'The client platforms to bootstrap.',
             required: true
         }),
         'backend': flags.string({
-            description: 'Where should the backend be deployed',
-            options: ['local', 'skip'],
+            description: 'Where the backend will be deployed.',
+            options: ['local', 'docker' , 'skip'],
             required: true
         })
       }
@@ -42,7 +42,7 @@ export default class ScaffoldVapp extends ScaffoldCommand {
             await this.updateVonageApplication(appId);
 
             this.updateClientURL(flags.platforms, appId);
-            this.startLocalVappBackend(appId);
+            await this.startVappBackend(flags.backend);
         }
 
         this.exit();
