@@ -5,6 +5,8 @@ Bootstrap Vapp
 
 + Clone the project to your computer.
 
++ run `npm install`
+
 + Add it as a plugin for the Vonage CLI, using the path for where you cloned this repo:
 
 ```sh
