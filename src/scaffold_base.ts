@@ -108,12 +108,6 @@ export default abstract class ScaffoldCommand extends BaseCommand {
         envFileRaw = envFileRaw.replace(/vonageAppPrivateKey=/g, `vonageAppPrivateKey=${pk}`);
         envFileRaw = envFileRaw.replace(/USE_LOCALTUNNEL=/g, `USE_LOCALTUNNEL=1`);
         
-        if (deployLocation === 'local') {
-            shell.exec('psql postgres -c "CREATE DATABASE vapp WITH ENCODING \'UTF8\' TEMPLATE template0"');
-            shell.exec('psql vapp -f scripts/init.sql')
-            envFileRaw = envFileRaw.replace(/postgresDatabaseUrl=/g, 'postgresDatabaseUrl=postgres://@localhost:5432/vapp');
-        }
-
         if (deployLocation === 'docker') {
             envFileRaw = envFileRaw.replace(/postgresDatabaseUrl=/g, 'postgresDatabaseUrl=postgres://postgres:postgres@postgres:5432/vapp-docker');
         }
@@ -129,10 +123,6 @@ export default abstract class ScaffoldCommand extends BaseCommand {
         }
         if (!this.checkPath('backend-node')) {
             shell.cd('backend-node', { silent: true });
-        }
-
-        if (deployLocation === 'local') {
-            shell.exec('npm start')
         }
 
         if (deployLocation === 'docker') {
@@ -163,14 +153,6 @@ export default abstract class ScaffoldCommand extends BaseCommand {
         if (clients.includes('web')) {
             if (!shell.which('npm', { silent: true })) {
                 this.log('NPM required');
-                shell.exit(1);
-                return;
-            }
-        }
-
-        if (deployLocation === 'local') {
-            if (!shell.which('postgres', { silent: true })) {
-                this.log('Postgres required');
                 shell.exit(1);
                 return;
             }

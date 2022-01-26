@@ -8,7 +8,7 @@ interface CreateFlags {
 }
 
 export default class ScaffoldVapp extends ScaffoldCommand {
-    static description = 'Bootstrap the Vapp demo projects'
+    static description = 'bootstrap the Vapp demo projects'
 
     static examples = []
 
@@ -20,7 +20,7 @@ export default class ScaffoldVapp extends ScaffoldCommand {
         }),
         'backend': flags.string({
             description: 'Where the backend will be deployed.',
-            options: ['local', 'docker' , 'skip'],
+            options: ['docker' , 'skip'],
             required: true
         })
       }
@@ -45,7 +45,7 @@ export default class ScaffoldVapp extends ScaffoldCommand {
             await this.startVappBackend(flags.backend);
         }
 
-        this.exit();
+        this.exit(0)
     }
 
     async catch(error: any) {
