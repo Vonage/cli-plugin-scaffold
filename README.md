@@ -1,14 +1,15 @@
-cli-plugin-vapp
-===============
+# cli-plugin-scaffold
 
-Bootstrap Vapp
+This is a plugin for the [Vonage CLI](https://github.com/Vonage/vonage-cli). The plugin enables the `scaffold` command to bootstrap sample projects from Vonage.
 
-+ Clone the project to your computer.
+## Apps
 
-+ run `npm install`
+* Vapp - iOS, Android and Web projects demoing the Vonage Client SDK's calling and messaging features.
 
-+ Add it as a plugin for the Vonage CLI, using the path for where you cloned this repo:
+## Installation
+
+To add the plugin to your CLI run:
 
 ```sh
-vonage plugins:link PATH_TO_VAPP_PLUGIN
+vonage plugins:install @vonage/cli-plugin-scaffold
 ```
