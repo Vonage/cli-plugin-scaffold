@@ -4,7 +4,7 @@ import cli from 'cli-ux';
 export class Scaffold extends ScaffoldCommand {
     static description = "scaffold vonage demo projects"
 
-    static examples = ['vongae scaffold:vapp --platforms=ios,android --backend=docker']
+    static examples = ['vonage scaffold:vapp --platforms=ios,android --backend=docker']
 
     async run() {
         const projectData = [
