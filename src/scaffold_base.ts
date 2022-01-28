@@ -10,10 +10,6 @@ export default abstract class ScaffoldCommand extends BaseCommand {
         ...BaseCommand.flags
     };
 
-    static args = [
-        ...BaseCommand.args
-    ];
-
     async catch(error: any) {
         this.error(error);
     }
@@ -33,7 +29,7 @@ export default abstract class ScaffoldCommand extends BaseCommand {
     }
 
     createApplication(): any {
-        const data: any = { 
+        const data: any = {
             name: 'vapp',
             capabilities: { rtc: { webhooks: { event_url: { address: 'https://www.sample.com' } } } },
             privacy: { improve_ai: false }
@@ -53,7 +49,7 @@ export default abstract class ScaffoldCommand extends BaseCommand {
     updateVonageApplication(id: any): any {
         const rtcURL = `https://www.${id}.loca.lt/rtc/events`;
 
-        const data: any = { 
+        const data: any = {
             name: 'vapp',
             capabilities: { rtc: { webhooks: { event_url: { address: rtcURL } } } },
         };
@@ -102,12 +98,12 @@ export default abstract class ScaffoldCommand extends BaseCommand {
         shell.exec('cp .env-sample .env')
 
         let pk = app_details.private_key.replace(/\n/g, '\\n');
-        pk = '"'+ pk + '"'
+        pk = '"' + pk + '"'
         let envFileRaw = readFileSync(`${process.cwd()}/.env`, 'utf8');
         envFileRaw = envFileRaw.replace(/vonageAppId=/g, `vonageAppId=${app_details.application_id}`);
         envFileRaw = envFileRaw.replace(/vonageAppPrivateKey=/g, `vonageAppPrivateKey=${pk}`);
         envFileRaw = envFileRaw.replace(/USE_LOCALTUNNEL=/g, `USE_LOCALTUNNEL=1`);
-        
+
         if (deployLocation === 'docker') {
             envFileRaw = envFileRaw.replace(/postgresDatabaseUrl=/g, 'postgresDatabaseUrl=postgres://postgres:postgres@postgres:5432/vapp-docker');
         }
@@ -127,7 +123,7 @@ export default abstract class ScaffoldCommand extends BaseCommand {
 
         if (deployLocation === 'docker') {
             shell.exec('docker compose up')
-        } 
+        }
     }
 
     checkPath(folder: string): boolean {
@@ -177,7 +173,7 @@ export default abstract class ScaffoldCommand extends BaseCommand {
         shell.cd('vapp');
         this.log('Downloading Vapp');
         shell.exec('git clone https://github.com/nexmo-community/clientsdk-the-v-app.git . --no-checkout --depth 1', { silent: true });
-        
+
         shell.exec('git sparse-checkout init --cone');
         if (clients.includes('ios')) {
             this.log('Cloning the iOS client');
