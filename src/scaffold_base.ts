@@ -122,7 +122,7 @@ export default abstract class ScaffoldCommand extends BaseCommand {
         }
 
         if (deployLocation === 'docker') {
-            shell.exec('docker compose up')
+            shell.exec('docker compose up --build')
         }
     }
 
