@@ -47,11 +47,14 @@ export default abstract class ScaffoldCommand extends BaseCommand {
     }
 
     updateVonageApplication(id: any): any {
-        const rtcURL = `https://www.${id}.loca.lt/rtc/events`;
+        const url = `https://www.${id}.loca.lt`;
 
         const data: any = {
             name: 'vapp',
-            capabilities: { rtc: { webhooks: { event_url: { address: rtcURL } } } },
+            capabilities: {
+                 rtc: { webhooks: { event_url: { address: `${url}/rtc/events` } } },
+                 voice: { webhooks: { answer_url: { address: `${url}/voice/answer` } } }
+            },
         };
 
         return new Promise((res, rej) => {
